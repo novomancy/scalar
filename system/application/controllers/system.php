@@ -316,6 +316,7 @@ class System extends MY_Controller {
 			case 'style':
 				$this->data['current_book_images'] = ($book_id) ? $this->books->get_images($book_id) : array();
 				$this->data['current_book_versions'] = $this->books->get_book_versions($book_id);
+				$this->data['api_key'] = $this->books->get_api_key($book_id, $this->data['login']->user_id);
 				break;
 		    case 'users':
 		        $this->data['current_book_users'] = ($book_id) ? $this->users->get_book_users($book_id) : array();

@@ -147,7 +147,7 @@ $(window).ready(function() {
             echo '<td style="vertical-align:middle;">Bookmarklet';
             echo '</td>'."\n";
             echo '<td style="vertical-align:middle;" class="row_div" colspan="2">';
-            echo '<a href="javascript:alert(\''.htmlspecialchars($row->slug).'\');">Add to '.htmlspecialchars($row->title).'</a>'.$login->email;
+            echo '(Currently disabled) <a href="javascript:alert(\''.$login->email.'\',\''.htmlspecialchars($api_key).'\');">Add to '.htmlspecialchars($row->title).'</a> : '.url_from_file(__FILE__).'test.js';
             echo "</td>\n";
             echo "</tr>\n"; 
 

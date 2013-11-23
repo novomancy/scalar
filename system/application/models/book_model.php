@@ -475,7 +475,22 @@ class Book_model extends MY_Model {
         $this->db->update($this->user_book_table, $data); 
         
         return $data['api_key'];
-    }       
+    }  
+
+    public function get_api_key($book_id, $user_id) {  
+        if (empty($user_id) || empty($user_id)) return false;
+
+
+        $this->db->select('api_key');
+        $this->db->from($this->user_book_table);
+        $this->db->where('book_id', $book_id);
+        $this->db->where('user_id', $user_id);
+        $query = $this->db->get();
+        $result = $query->result();
+        if (!isset($result[0])) throw new Exception('Could not find API key');
+
+        return $result[0]->api_key;
+    }          
    
     public function get_by_slug($uri='') {
 
