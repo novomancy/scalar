@@ -67,9 +67,20 @@ class Login_model extends User_model {
     	return false;
     	
     }
+
+    // TODO: Re-enable when John gets back to federated logins after the bookmarklet is done
+    // 
+    // public function do_federated_login($force=false){
+    //         // die(trim($_POST['openid_provider']));        
+    //     $action = (isset($_REQUEST['action'])) ? $_REQUEST['action'] : null;
+    //     if ($force || $action == 'do_federated_login') {
+    //         // die(trim($_POST['openid_provider']));
+    //     }
+    //     return false;
+    // }
     
 	public function do_login($force=false) {
-		
+
 		$action = (isset($_REQUEST['action'])) ? $_REQUEST['action'] : null;
 		if ($force || $action == 'do_login') {
 

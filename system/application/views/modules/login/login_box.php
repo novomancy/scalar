@@ -13,32 +13,44 @@
 <? if (@$_REQUEST['msg']==2): ?>
 <div class="saved">Your password has been reset.  Please login below to continue.</div>
 <? endif ?>
-	<form action="<?=confirm_slash(base_url())?>system/login" method="post" class="panel">
-		<input type="hidden" name="action" value="do_login" />
-		<input type="hidden" name="redirect_url" value="<?=@htmlspecialchars($_REQUEST['redirect_url'])?>" />
-		<input type="hidden" name="msg" value="<? echo (int) @$_REQUEST['msg'] ?>" />
 		<table class="form_fields">
+			<form action="<?=confirm_slash(base_url())?>system/login" method="post" class="panel">
+				<input type="hidden" name="action" value="do_login" />
+				<input type="hidden" name="redirect_url" value="<?=@htmlspecialchars($_REQUEST['redirect_url'])?>" />
+				<input type="hidden" name="msg" value="<? echo (int) @$_REQUEST['msg'] ?>" />
+				<tr>
+					<td class="login_header" colspan="2">
+						<img src="application/views/modules/login/scalar_logo.png" alt="scalar_logo" width="75" height="68" />
+						<h4>Please sign in below</h4>
+					</td>
+				</tr>
+				<tr>
+					<td class="field">Email</td><td class="value"><input type="text" name="email" value="<?=(isset($_POST['email']))?htmlspecialchars(trim($_POST['email'])):''?>" class="input_text" /></td>
+				</tr>
+				<tr>
+					<td class="field">Password</td><td class="value"><input type="password" name="password" value="" class="input_text" autocomplete="off" /></td>
+				</tr>
+				<tr>
+					<td></td>
+					<td class="form_buttons">
+						<input type="submit" class="generic_button large default" value="Login" />
+						<?=str_repeat("&nbsp; ", 2)?><a href="forgot_password"><small>Forgot password?</small></a>
+					</td>
+				</tr>
+			</form>
 			<tr>
-				<td class="login_header" colspan="2">
-					<img src="application/views/modules/login/scalar_logo.png" alt="scalar_logo" width="75" height="68" />
-					<h4>Please sign in below</h4>
-				</td>
-			</tr>
-			<tr>
-				<td class="field">Email</td><td class="value"><input type="text" name="email" value="<?=(isset($_POST['email']))?htmlspecialchars(trim($_POST['email'])):''?>" class="input_text" /></td>
-			</tr>
-			<tr>
-				<td class="field">Password</td><td class="value"><input type="password" name="password" value="" class="input_text" autocomplete="off" /></td>
-			</tr>
-			<tr>
-				<td></td>
-				<td class="form_buttons">
-					<input type="submit" class="generic_button large default" value="Login" />
-					<?=str_repeat("&nbsp; ", 2)?><a href="forgot_password"><small>Forgot password?</small></a>
-				</td>
+<!-- 				<td class="login_header" colspan="2">					
+					<h4>Or connect to an existing account</h4>
+					<form action="<?=confirm_slash(base_url())?>system/login" method="post" class="panel">
+						<input type="hidden" name="action" value="do_federated_login" />
+						<input type="hidden" name="redirect_url" value="<?=@htmlspecialchars($_REQUEST['redirect_url'])?>" />
+						<input type="hidden" name="msg" value="<? echo (int) @$_REQUEST['msg'] ?>" />
+						<label for="login">Open ID Provider </label><input style="width: 10em" id="openid_provider" name="openid_provider" type="text"></input><input id="openid_submit" type="submit" value="go"/>
+					</form>
+				</td> -->
 			</tr>
 		</table>
-	</form>
+
 	<small><a href="<?=base_url()?>">Return to index</a> | <a href="http://scalar.usc.edu/terms-of-service/" target="_blank">Terms of Service</a></small>
 </div>
 <br clear="both" />
