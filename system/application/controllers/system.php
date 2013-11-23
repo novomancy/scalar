@@ -632,6 +632,16 @@ class System extends MY_Controller {
 				if (!$this->books->delete_user($book_id, $user_id)) die ("{'error':'Could not delete'}");	
 				$this->data['content'] = array('actioned'=>'deleted');
 				break;
+			case 'generate_api_key':
+				$user_id =@ (int) $_REQUEST['user_id'];
+				$book_id =@ (int) $_REQUEST['book_id'];
+				$this->data['book'] = $this->books->get($book_id);
+				$this->set_user_book_perms();				
+				if (!$this->login_is_book_admin()) die ("{'error':'Invalid permissions'}");	
+				//if (!$this->books->delete_user($book_id, $user_id)) die ("{'error':'Could not delete'}");	
+				if(!$this->books->generate_api_key($book_id, $user_id)) die ("{'error':'Could generate API key'}");	
+				$this->data['content'] = array('actioned'=>'Key created');
+				break;				
 			case 'save_page_book':
 				$this->load->model('page_model', 'page');  	
 				$content_id =@ (int) $_REQUEST['id'];

@@ -142,6 +142,15 @@ $(window).ready(function() {
 			echo confirm_slash(base_url()).'<input name="slug" type="text" value="'.htmlspecialchars($row->slug).'" style="width:150px;" />';
 			echo "</td>\n";
 			echo "</tr>\n";	
+            // Bookmarklet
+            echo '<tr typeof="books">';
+            echo '<td style="vertical-align:middle;">Bookmarklet';
+            echo '</td>'."\n";
+            echo '<td style="vertical-align:middle;" class="row_div" colspan="2">';
+            echo '<a href="javascript:alert(\''.htmlspecialchars($row->slug).'\');">Add to '.htmlspecialchars($row->title).'</a>'.$login->email;
+            echo "</td>\n";
+            echo "</tr>\n"; 
+
 			// Row div
 			//echo '<tr class="row_div"><td colspan="3"></td></tr>';	
 			// Stylesheet

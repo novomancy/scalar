@@ -55,6 +55,13 @@
 				window.location.reload();
 			});			
 		}
+		function generate_api_key(book_id, user_id) {
+			if ('undefined'==typeof(book_id) || book_id==0) return alert('Please select a book');
+			if ('undefined'==typeof(user_id) || user_id==0) return alert('Invalid user ID');
+			$.get('api/generate_api_key', {user_id:user_id, book_id:book_id}, function() {
+				window.location.reload();
+			});			
+		}		
 		function request_book_user(book_id) {
 				var $div = $('<div class="select_box"><h4 class="dialog_title">Add a user</h4>To connect a user to your book, first search for them by their full name.<br clear="both" /><br /><form><input type="text" name="fullname" value="Full name" />&nbsp; <input type="submit" value="Search" /></form><div class="results" style="padding-top:16px;padding-bottom:10px;"></div><a class="generic_button large" href="javascript:;" onclick="$(this).parent().remove();" style="float:right;font-size:larger;">Cancel</a></div>');
 				$div.find('input:first').focus(function() {if ($(this).val() == 'Full name') $(this).val('');});
@@ -111,6 +118,7 @@
 				<th>Full name</th>
 				<th>Email</th>
 				<th>URL</th>
+				<th>API Key</th>
 			</tr>
 		</thead>
 		<tbody>
@@ -126,6 +134,8 @@
 				echo '<td property="fullname">'.$row->fullname."</td>\n";
 				echo '<td property="email">'.$row->email."</td>\n";
 				echo '<td property="url">'.$row->url."</td>\n";
+				$key_text = empty($row->api_key)?'<a href="javascript:generate_api_key('.$book->book_id.','.$row->user_id.');">generate</a>':$row->api_key;
+				echo '<td property="api_key">'.$key_text."</td>\n";
 				echo "</tr>\n";
 				$count++;
 			}

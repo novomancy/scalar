@@ -449,7 +449,7 @@ class Book_model extends MY_Model {
     		if (empty($user_id)) continue;
     		$this->db->where('book_id', $book_id);
     		$this->db->where('user_id', $user_id);
-			$this->db->delete($this->user_book_table);      		
+            $this->db->delete($this->user_book_table);
 			$data = array(
                'book_id' => $book_id,
                'user_id' => $user_id,
@@ -461,7 +461,21 @@ class Book_model extends MY_Model {
     	
     	return $this->get_users($book_id);
     	
-    }    
+    } 
+
+    public function generate_api_key($book_id, $user_id) {  
+        if (empty($user_id) || empty($user_id)) return false;
+
+        $this->db->where('book_id', $book_id);
+        $this->db->where('user_id', $user_id);
+        for($len=24,$key='';strlen($key)<$len;$key.=chr(!mt_rand(0,2)?mt_rand(48,57):(!mt_rand(0,1)?mt_rand(65,90):mt_rand(97,122))));
+        $data = array(
+           'api_key' => $key
+        );
+        $this->db->update($this->user_book_table, $data); 
+        
+        return $data['api_key'];
+    }       
    
     public function get_by_slug($uri='') {
 
