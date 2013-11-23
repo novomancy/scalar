@@ -147,7 +147,12 @@ $(window).ready(function() {
             echo '<td style="vertical-align:middle;">Bookmarklet';
             echo '</td>'."\n";
             echo '<td style="vertical-align:middle;" class="row_div" colspan="2">';
-            echo '(Currently disabled) <a href="javascript:alert(\''.$login->email.'\',\''.htmlspecialchars($api_key).'\');">Add to '.htmlspecialchars($row->title).'</a> : '.url_from_file(__FILE__).'test.js';
+
+            echo '(Currently disabled) <a href="javascript:(function(e,a,g,h,f,c,b,d){if(!(f=e.jQuery)||g>f.fn.jquery||h(f)){c=a.createElement(\'script\');c.type=\'text/javascript\';c.src=\'http://ajax.googleapis.com/ajax/libs/jquery/\'+g+\'/jquery.min.js\';c.onload=c.onreadystatechange=function(){if(!b&&(!(d=this.readyState)||d==\'loaded\'||d==\'complete\')){h((f=e.jQuery).noConflict(1),b=1);f(c).remove()}};a.documentElement.childNodes[0].appendChild(c)}})(window,document,\'1.3.2\',function($,L){var s=a.createElement(\'script\');s.type=\'text/javascript\';s.src=\''.url_from_file(__FILE__).'bmlt.js\';document.body.appendChild(s);});">Add to '.htmlspecialchars($row->title).'</a>';
+
+
+
+            //alert(\''.$login->email.'\',\''.htmlspecialchars($api_key).'\');
             echo "</td>\n";
             echo "</tr>\n"; 
 
