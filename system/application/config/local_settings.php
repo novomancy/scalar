@@ -7,11 +7,11 @@
 $config['active_melon'] = 'honeydew';
 
 // SALT, any string you want as long as it is complicated
-$config['shasalt'] = '';
+$config['shasalt'] = 'asdfha8cpviadwcaw9j0a9ewj9pc8aewh9pchae9ph';
 
 // ReCAPTCHA key (leave blank for no ReCAPTCHA)
-$config['recaptcha_public_key'] = '';
-$config['recaptcha_private_key'] = '';
+$config['recaptcha_public_key'] = '6Lct4LwSAAAAAJp0iN9Wwr4vYaFdhX2rTJsx8w6E';
+$config['recaptcha_private_key'] = '6Lct4LwSAAAAAA16IkveAOh9NQ_D_WUwZc3rglmM';
 
 // Register key (leave blank if no register key required, e.g., array())
 $config['register_key'] = array();

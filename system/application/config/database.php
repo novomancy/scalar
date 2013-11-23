@@ -42,9 +42,9 @@ $active_group = "default";
 $active_record = TRUE;
 
 $db['default']['hostname'] = 'localhost';  
-$db['default']['username'] = '';    
-$db['default']['password'] = '';
-$db['default']['database'] = '';
+$db['default']['username'] = 'novoscalar';    
+$db['default']['password'] = 'QvQ4NZ7e';
+$db['default']['database'] = 'novoscalar';
 
 $db['default']['dbdriver'] = "mysql";
 

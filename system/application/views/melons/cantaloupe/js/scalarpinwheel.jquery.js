@@ -41,12 +41,17 @@
  * @param t a raphael text shape
  * @param width - pixels to wrap text width
  * @param textAnchor - desired end state of text anchor (added by Erik)
+ * @param maxLines - maximum number of lines (added by Erik)
  * modify t text adding new lines characters for wrapping it to given width.
  * source: http://stackoverflow.com/questions/3142007/how-to-either-determine-svg-text-box-width-or-force-line-breaks-after-x-chara
  */
-function wrapText(t, width, textAnchor) {
+function wrapText( t, width, textAnchor, maxLines ) {
 
     var content = t.attr("text");
+    
+    if ( maxLines == null ) {
+    	maxLines = 999;
+    }
     
     // prevents HTML entities from being passed through
 	content = $( '<div/>' ).html( content ).text();
@@ -55,21 +60,30 @@ function wrapText(t, width, textAnchor) {
     t.attr({'text-anchor': 'start', "text": abc});
     var letterWidth=t.getBBox().width / abc.length;
     t.attr({"text": content});
-    var words = content.split(" "), x=0, s=[];
-    var wordsInThisLine = 0;
+    var words = content.split(" "), x=0, s=[],
+    	wordsInThisLine = 0,
+    	lineCount = 0;
     for ( var i = 0; i < words.length; i++) {
         var l = words[i].length;
         if (((x+(l*letterWidth))>width) && (wordsInThisLine > 0)) {
+        	lineCount++;
+        	if ( lineCount >= maxLines ) {
+        		break;
+        	}
             s.push("\n")
             x=0;
             wordsInThisLine = 0;
-        } else {
-            x+=l*letterWidth;
-            wordsInThisLine++;
         }
+        x+=l*letterWidth;
+        wordsInThisLine++;
         s.push(words[i]+" ");
     }
-    t.attr({"text": s.join(""), 'text-anchor':textAnchor});
+    var result = s.join( '' );
+	if ( i < words.length ) {
+		result = result.substr( 0, result.length - 1 );
+		result += '...' ;
+	}
+    t.attr({"text": result, 'text-anchor':textAnchor});
     var boxHeight = t.getBBox().height;
 	t.attr('y', t.attr('y')+(boxHeight * .5));
 };
@@ -86,7 +100,7 @@ function ScalarPinwheel(element) {
 
 	this.element = element;
 	this.nodeGraph = [];
-	this.relationsToDraw = ['path','tag'];
+	this.relationsToDraw = ['path','tag','comment','annotation'];
 	this.showHistory = false;
 	this.showIcons = false;
 	this.expandedNodes = [];
@@ -116,6 +130,7 @@ function ScalarPinwheel(element) {
 			case ViewState.Reading:
 			if ( me.currentZoom != 0 ) {
 				me.currentZoom = 0;
+				me.updateZoomButtons();
 			}
 			me.update();
 			break;
@@ -136,6 +151,7 @@ ScalarPinwheel.prototype.zoomThreshold = null;
 ScalarPinwheel.prototype.canvas = null;
 ScalarPinwheel.prototype.canvasSet = null;
 ScalarPinwheel.prototype.center = null;
+ScalarPinwheel.prototype.centerCanvas = null;
 ScalarPinwheel.prototype.unitSize = null;
 ScalarPinwheel.prototype.filter = null;
 ScalarPinwheel.prototype.pathGraphs = null;
@@ -185,23 +201,79 @@ ScalarPinwheel.prototype.render = function() {
 
 	this.canvas = Raphael('graph', $(window).width(), $(window).height());
 	
-	var zoomControls = $('<div id="zoomControls"></div>').appendTo('#graph');
-	this.zoomIn = Raphael('zoomControls', 32, 32);
-	this.zoomIn.path('M25.979,12.896 19.312,12.896 19.312,6.229 12.647,6.229 12.647,12.896 5.979,12.896 5.979,19.562 12.647,19.562 12.647,26.229 19.312,26.229 19.312,19.562 25.979,19.562z').attr({fill: '#000', stroke: 'none'}).click(function(event) {
+	var handleZoomIn = function( event ) {
 		event.stopImmediatePropagation();
-		if (me.currentZoom > 0) {
+		if ( me.currentZoom > 0 ) {
 			me.currentZoom--;
-			me.buildGraph();
-		}
-	});
-	this.zoomOut = Raphael('zoomControls', 32, 32);
-	this.zoomOut.path('M25.979,12.896,5.979,12.896,5.979,19.562,25.979,19.562z').attr({fill: '#000', stroke: 'none'}).click(function(event) {
+			me.currentZoom--;
+			/*$( '#graph' ).addClass( 'zoom_in' ).delay( 250 ).queue( 'fx', function( next ) {
+				$( this ).removeClass( 'zoom_in' );
+				me.buildGraph();
+				next();
+			} );*/
+			$( '#graph' ).addClass( 'zoom_in_start' ).delay( 250 ).queue( 'fx', function( next ) {
+				//$( this ).removeClass( 'zoom_out_start' );
+				me.buildGraph();
+				$( this ).addClass( 'zoom_in_end' );
+				next();
+			} ).delay( 450 ).queue( 'fx', function( next ) {
+				$( this ).removeClass( 'zoom_in_start zoom_in_end' );
+				next();
+			} );
+			//me.buildGraph();
+			me.updateZoomButtons();
+		}	
+	}
+	
+	var handleZoomOut = function( event ) {
 		event.stopImmediatePropagation();
-		if (me.currentZoom < 6) {
+		if ( me.currentZoom < 4 ) {
 			me.currentZoom++;
-			me.buildGraph();
+			me.currentZoom++;
+			/*$( '#graph' ).addClass( 'zoom_out' ).delay( 250 ).queue( 'fx', function( next ) {
+				//$( this ).removeClass( 'zoom_out' );
+				me.buildGraph();
+				next();
+			} );*/
+			$( '#graph' ).addClass( 'zoom_out_start' ).delay( 250 ).queue( 'fx', function( next ) {
+				//$( this ).removeClass( 'zoom_out_start' );
+				me.buildGraph();
+				$( this ).addClass( 'zoom_out_end' );
+				next();
+			} ).delay( 450 ).queue( 'fx', function( next ) {
+				$( this ).removeClass( 'zoom_out_start zoom_out_end' );
+				next();
+			} );
+			//me.buildGraph();
+			me.updateZoomButtons();
 		}
-	})
+	}
+	
+	var centerDiv = $( '<div id="pinwheel_center"></div>' );
+	$( '#graph' ).after( centerDiv );
+	this.centerCanvas = Raphael( 'pinwheel_center', 200, 200 );
+	
+	//var zoomControls = $('<div id="zoomControls"></div>').appendTo('#graph');
+	var zoomControls = $('<div id="zoomControls"></div>');
+	$( '#graph' ).after( zoomControls );
+	
+	this.zoomIn = Raphael('zoomControls', 32, 32);
+	var zoomInCircle = this.zoomIn.circle(16, 16, 16).click( handleZoomIn );
+	var zoomInHover = function() { zoomInCircle.attr( { 'fill': '#000' } ) };
+	var zoomInUnhover = function() { zoomInCircle.attr( { 'fill': '#777' } ) };
+	zoomInCircle.attr({'fill':'#777', 'stroke':'none', 'cursor':'pointer', opacity: '0.25'});
+	var zoomInPath = this.zoomIn.path('M25.979,12.896 19.312,12.896 19.312,6.229 12.647,6.229 12.647,12.896 5.979,12.896 5.979,19.562 12.647,19.562 12.647,26.229 19.312,26.229 19.312,19.562 25.979,19.562z').attr({fill: '#fff', stroke: 'none', opacity: '0.25' }).click( handleZoomIn );
+	zoomInCircle.hover( zoomInHover, zoomInUnhover );
+	zoomInPath.hover( zoomInHover, zoomInUnhover );
+
+	this.zoomOut = Raphael('zoomControls', 32, 32);
+	var zoomOutCircle = this.zoomOut.circle(16, 16, 16).click( handleZoomOut );
+	var zoomOutHover = function() { zoomOutCircle.attr( { 'fill': '#000' } ) };
+	var zoomOutUnhover = function() { zoomOutCircle.attr( { 'fill': '#777' } ) };
+	zoomOutCircle.attr({'fill':'#777', 'stroke':'none', 'cursor':'pointer'});
+	var zoomOutPath = this.zoomOut.path('M25.979,12.896,5.979,12.896,5.979,19.562,25.979,19.562z').attr({fill: '#fff', stroke: 'none'}).click( handleZoomOut );
+	zoomOutCircle.hover( zoomOutHover, zoomOutUnhover );
+	zoomOutPath.hover( zoomOutHover, zoomOutUnhover );
 	
 	this.buildGraph();
 	
@@ -209,6 +281,29 @@ ScalarPinwheel.prototype.render = function() {
 	
 	//console.log('---- current node graph ----');
 	//console.log(this.nodeGraph);
+
+}
+
+ScalarPinwheel.prototype.updateZoomButtons = function() {
+
+	if ( this.currentZoom == 0 ) {
+		this.zoomIn.forEach( function( el ) {
+			el.attr( 'opacity', '0.25' );
+		} );
+	} else {
+		this.zoomIn.forEach( function( el ) {
+			el.attr( 'opacity', '1.0' );
+		} );
+	}
+	if ( this.currentZoom == 4 ) {
+		this.zoomOut.forEach( function( el ) {
+			el.attr( 'opacity', '0.25' );
+		} );
+	} else {
+		this.zoomOut.forEach( function( el ) {
+			el.attr( 'opacity', '1.0' );
+		} );
+	}
 
 }
 
@@ -265,6 +360,7 @@ ScalarPinwheel.prototype.setState = function(newState, duration, propsOnly) {
 		case ViewState.Reading:
 		if ( this.currentZoom != 0 ) {
 			this.currentZoom = 0;
+			this.updateZoomButtons();
 		}
 		this.update();
 		break;
@@ -298,7 +394,7 @@ ScalarPinwheel.prototype.calculateDimensions = function() {
 	if ( ($(window).width() - $('.page').width()) == 0 ) {
 		this.currentMargin = 150;
 	} else {
-		this.currentMargin = ($(window).width() - $('.page').width()) * .5;
+		this.currentMargin = Math.max( 100, ($(window).width() - $('.page').width()) * .5);
 	}
 	
 	this.unitSize = {
@@ -859,16 +955,26 @@ ScalarPinwheel.prototype.drawGraphNode = function(graphNode) {
 			}
 		}
 		
-		var canvasPosition = {
-			x: this.center.x + (graphNode.position.x * this.unitSize.x),
-			y: this.center.y + (graphNode.position.y * this.unitSize.y) 
-		}
+		var canvasPosition;
 		
 		//console.log('     '+graphNode.position.x+','+graphNode.position.y);
 		
 		//console.log('draw node '+graphNode.nodes[0].getDisplayTitle()+' at '+canvasPosition.x+','+canvasPosition.y);
 		
-		graphNode.drawing = this.canvas.set();
+		if (graphNode.nodes[0] == currentNode) {
+			this.centerCanvas.clear();
+			graphNode.drawing = this.centerCanvas.set();
+			canvasPosition = {
+				x: 100,
+				y: 100 
+			}
+		} else {
+			graphNode.drawing = this.canvas.set();
+			canvasPosition = {
+				x: this.center.x + (graphNode.position.x * this.unitSize.x),
+				y: this.center.y + (graphNode.position.y * this.unitSize.y) 
+			}
+		}
 		var outerCircle;
 		var outerRadius;
 		var innerCircle;
@@ -893,10 +999,33 @@ ScalarPinwheel.prototype.drawGraphNode = function(graphNode) {
 				
 			}
 			if (state == ViewState.Navigating) {
-				me.canvasSet.animate({'transform':'t'+(-me.unitSize.x*graphNode.position.x)+','+(-me.unitSize.y*graphNode.position.y)}, 350, '<>', function() {
+				/*me.canvasSet.animate({'transform':'t'+(-me.unitSize.x*graphNode.position.x)+','+(-me.unitSize.y*graphNode.position.y)}, 350, '<>', function() {
 					//scalarview.setPage(scalarapi.basepath(graphNode.nodes[0].url)); 
 					window.location = addTemplateToURL(url, 'cantaloupe'); // TODO: make this dynamic
-				})
+				})*/
+				$( '#graph' ).css( {
+					'-webkit-transform': 'translate( ' + ( -me.unitSize.x * graphNode.position.x ) + 'px,' + ( -me.unitSize.y * graphNode.position.y ) + 'px )',
+					'-moz-transform': 'translate( ' + ( -me.unitSize.x * graphNode.position.x ) + 'px,' + ( -me.unitSize.y * graphNode.position.y ) + 'px )',
+					'-o-transform': 'translate( ' + ( -me.unitSize.x * graphNode.position.x ) + 'px,' + ( -me.unitSize.y * graphNode.position.y ) + 'px )',
+					'transform': 'translate( ' + ( -me.unitSize.x * graphNode.position.x ) + 'px,' + ( -me.unitSize.y * graphNode.position.y ) + 'px )',
+					'-webkit-transition': 'all .5s ease-in-out',
+					'-moz-transition': 'all .5s ease-in-out',
+					'-o-transition': 'all .5s ease-in-out',
+					'transition': 'all .5s ease-in-out'
+				} ).delay( 500 ).queue( 'fx', function( next ) {
+					window.location = addTemplateToURL(url, 'cantaloupe');
+					next();
+				} );
+				$( '#pinwheel_center' ).css( {
+					'-webkit-transform': 'translate( ' + ( -me.unitSize.x * graphNode.position.x ) + 'px,' + ( -me.unitSize.y * graphNode.position.y ) + 'px )',
+					'-moz-transform': 'translate( ' + ( -me.unitSize.x * graphNode.position.x ) + 'px,' + ( -me.unitSize.y * graphNode.position.y ) + 'px )',
+					'-o-transform': 'translate( ' + ( -me.unitSize.x * graphNode.position.x ) + 'px,' + ( -me.unitSize.y * graphNode.position.y ) + 'px )',
+					'transform': 'translate( ' + ( -me.unitSize.x * graphNode.position.x ) + 'px,' + ( -me.unitSize.y * graphNode.position.y ) + 'px )',
+					'-webkit-transition': 'all .5s ease-in-out',
+					'-moz-transition': 'all .5s ease-in-out',
+					'-o-transition': 'all .5s ease-in-out',
+					'transition': 'all .5s ease-in-out'
+				} );
 			} else {
 				//scalarview.setPage(scalarapi.basepath(graphNode.nodes[0].url));
 				window.location = addTemplateToURL(url, 'cantaloupe');
@@ -927,11 +1056,17 @@ ScalarPinwheel.prototype.drawGraphNode = function(graphNode) {
 						label = this.canvas.text(canvasPosition.x, canvasPosition.y+20, graphNode.getDisplayTitle());
 						// replace with css fonts
 						label.attr({'font-family':'\'Lato\', Arial, sans-serif', 'font-size':'16px', 'cursor':'pointer'});
-						wrapText(label, labelWidth, 'middle');
+						wrapText( label, labelWidth, 'middle', Math.max( 1, 5 - me.currentZoom ) );
 						graphNode.drawing.push(label);
 					}
+					innerCircle.click(function() { 
+						console.log('stop');
+						me.viewer.showForGraphNode(graphNode);
+						event.stopImmediatePropagation();
+					});
 					outerCircle.click(function() { 
 						me.viewer.showForGraphNode(graphNode);
+						event.stopImmediatePropagation();
 					});
 				} else {
 					// draw heterogeneous multi-node
@@ -945,10 +1080,10 @@ ScalarPinwheel.prototype.drawGraphNode = function(graphNode) {
 					outerRadius = 18;
 				//}
 				//if (graphNode.children.length > 0) outerRadius += 6;
-				outerCircle = this.canvas.circle(canvasPosition.x, canvasPosition.y, outerRadius);
+				outerCircle = this.centerCanvas.circle(canvasPosition.x, canvasPosition.y, outerRadius);
 			 
 				if (!this.showIcons) {
-					innerCircle = this.canvas.circle(canvasPosition.x, canvasPosition.y, 3.5);
+					innerCircle = this.centerCanvas.circle(canvasPosition.x, canvasPosition.y, 3.5);
 					if (currentNode.color) {
 						color = Raphael.getRGB(graphNode.nodes[0].color);
 						color = Raphael.rgb2hsl(color.r, color.g, color.b);
@@ -961,10 +1096,10 @@ ScalarPinwheel.prototype.drawGraphNode = function(graphNode) {
 					}
 					graphNode.drawing.push(outerCircle, innerCircle);
 					if (drawLabels) {
-						label = this.canvas.text(canvasPosition.x, canvasPosition.y+20, graphNode.getDisplayTitle());
+						label = this.centerCanvas.text(canvasPosition.x, canvasPosition.y+20, graphNode.getDisplayTitle());
 						// replace with css fonts
 						label.attr({'font-family':'\'Lato\', Arial, sans-serif', 'font-size':'16px', 'cursor':'pointer'});
-						wrapText(label, labelWidth, 'middle');
+						wrapText( label, labelWidth, 'middle', Math.max( 1, 5 - me.currentZoom ) );
 						graphNode.drawing.push(label);
 					}
 				} else {
@@ -1063,7 +1198,7 @@ ScalarPinwheel.prototype.drawGraphNode = function(graphNode) {
 					/*if (graphNode.children.length > 0) {
 						label.attr({'font-weight':'bold'});
 					}*/
-					wrapText(label, labelWidth, 'middle');
+					wrapText( label, labelWidth, 'middle', Math.max( 1, 5 - me.currentZoom ) );
 					graphNode.drawing.push(label);
 				}
 					
@@ -1225,6 +1360,8 @@ ScalarPinwheel.prototype.drawRelation = function(type, sourceGraphNode, destGrap
 		break;
 		
 		case 'tag_parent':
+		case 'comment_parent':
+		case 'annotation_parent':
 		pathString += 'M'+destPos.x+' '+destPos.y;
 		pathString += 'L'+sourcePos.x+' '+sourcePos.y;
 		pathString += 'L'+sourcePos.x+' '+sourcePos.y;
@@ -1450,22 +1587,43 @@ function PathGraph(pathNode, offset) {
 function GraphNodeViewer(elementName, pinwheel) {
 
 	this.element = $('body').find('#'+elementName);
-	this.canvas = Raphael(elementName, 100, 100);
 	this.pinwheel = pinwheel;
+	
+	$('body').click(function(e) {
+		$( '.graphNodeViewer' ).hide();
+	});
 
 }
 
 GraphNodeViewer.prototype.element = null;
-GraphNodeViewer.prototype.canvas = null;
 GraphNodeViewer.prototype.pinwheel = null;
 
 GraphNodeViewer.prototype.showForGraphNode = function(graphNode) {
+	
+	this.element.empty();
+	
+	var i, node, row,
+		n = graphNode.nodes.length,
+		table = $( '<table class="results_list caption_font"><tbody></tbody></table>' ).appendTo( this.element );
+	
+	for ( i = 0; i < n; i++ ) {
+		node = graphNode.nodes[ i ];
+		row = $( '<tr><td>' + node.getDisplayTitle() + '</td></tr>' ).appendTo( table );
+		row.data( 'node', node );
+		row.click( function() { document.location = addTemplateToURL( $( this ).data( 'node' ).url, 'cantaloupe' ); } );
+	}
 
 	var canvasPosition = {
-		//x: this.pinwheel.center.x + (graphNode.position.x * this.pinwheel.unitSize.x),
-		//y: this.pinwheel.center.y + (graphNode.position.y * this.pinwheel.unitSize.y) 
-		x: 300 + (graphNode.position.x * 100),
-		y: 300 + (graphNode.position.y * 100) 
+		x: this.pinwheel.center.x + (graphNode.position.x * this.pinwheel.unitSize.x),
+		y: this.pinwheel.center.y + (graphNode.position.y * this.pinwheel.unitSize.y) 
+	}
+	
+	if ( graphNode.position.x > 0 ) {
+		canvasPosition.x -= parseInt( this.element.width() );
+	}
+	
+	if ( graphNode.position.y > 0 ) {
+		canvasPosition.y -= parseInt( this.element.height() );
 	}
 	
 	this.element.css('left', canvasPosition.x);
@@ -1603,7 +1761,7 @@ function GraphNode(nodes, position, reason, pinwheel) {
 		} else if (this.nodes.length == 1) {
 			return this.nodes[0].getDisplayTitle();
 		} else {
-			return (this.nodes.length-1)+' items';
+			return (this.nodes.length)+' items';
 		}
 	
 	}
@@ -1652,6 +1810,8 @@ function GraphNode(nodes, position, reason, pinwheel) {
 			break;
 			
 			case 'tag':
+			case 'comment':
+			case 'annotation':
 			n = relations.length;
 			for (i=0; i<n; i++) {
 				relation = relations[i];

@@ -365,7 +365,13 @@ function handleFlashVideoMetadata(data) {
 		 * Loads metadata for the media.
 		 */
 		jQuery.MediaElementController.prototype.loadMetadata = function() {
-			if (scalarapi.loadPage(this.model.meta.substr(scalarapi.model.urlPrefix.length), true, this.handleMetadata, null, 1, false, 'annotation') == 'loaded') this.handleMetadata();
+			if ( this.model.options.getRelated ) {
+				// get all relationships
+				if (scalarapi.loadPage(this.model.meta.substr(scalarapi.model.urlPrefix.length), true, this.handleMetadata, null, 1, true) == 'loaded') this.handleMetadata();
+			} else {
+				// get annotations only
+				if (scalarapi.loadPage(this.model.meta.substr(scalarapi.model.urlPrefix.length), true, this.handleMetadata, null, 1, false, 'annotation') == 'loaded') this.handleMetadata();
+			}
 		}
 
 		/**
@@ -1841,12 +1847,16 @@ function handleFlashVideoMetadata(data) {
 			// if we were passed an annotation to seek to, wait a while before attempting to seek
 			// (if YouTube, then don't try to seek if we're not on Mobile Safari, since we'll set player
 			// params to seek instead)
-			if ((this.model.seekAnnotation != null) && (this.model.mediaSource.contentType != 'image') && ((this.model.mediaSource.name != 'YouTube') || ((this.model.mediaSource.name == 'YouTube') && (scalarapi.scalarBrowser == 'MobileSafari')))) {
- 				if (this.annotationDisplay) {
+			if ((this.model.seekAnnotation != null) /*&& (this.model.mediaSource.contentType != 'image')*/ && ((this.model.mediaSource.name != 'YouTube') || ((this.model.mediaSource.name == 'YouTube') && (scalarapi.scalarBrowser == 'MobileSafari')))) {
+ 				if (this.annotationDisplay && (this.model.mediaSource.contentType != 'image')) {
 	 				this.annotationDisplay.html('<p class="annoSeekMessage">Seeking to '+scalarapi.decimalSecondsToHMMSS(this.model.seekAnnotation.properties.start)+'…</p>');
 	 				this.annotationDisplay.fadeIn();
  				}
-				setTimeout(this.doAutoSeek, 6000);
+ 				if ( this.model.mediaSource.contentType != 'image' ) {
+ 					setTimeout( this.doAutoSeek, 6000 );
+				} else {
+ 					setTimeout( this.doAutoSeek, 3000 );
+				}
 			}
 
 			if ('nav_bar' == this.model.options.header) {

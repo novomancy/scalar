@@ -55,6 +55,8 @@
 		me.element.attr('id', 'header');
 		//me.element.data('state', 'maximized');
 		
+		$( 'body' ).bind( 'setState', me.handleSetState );
+		
 		var bookId = parseInt($('#book-id').text());
 		$('header').hide();
 		
@@ -66,14 +68,14 @@
 				if ((currentScroll > me.lastScroll) && (currentScroll > 50) && (state == ViewState.Reading)) {
 					if ( me.state == 'maximized' ) {
 						me.state = 'minimized';
-						me.element.stop().animate({top:'-40px'}, 200);
+						me.element.addClass( 'header_slide' );
 					}
 					
 				// if we're scrolling down, slide the header downwards
 				} else if ((me.lastScroll - currentScroll) > 10) {
 					if ( me.state == 'minimized' ) {
 						me.state = 'maximized';
-						me.element.stop().animate({top:'0'}, 200);
+						me.element.removeClass( 'header_slide' );
 					}
 				}
 				
@@ -84,7 +86,7 @@
 		this.element.mouseenter(function() {
 			if ( me.state == 'minimized' ) {
 				me.state = 'maximized';
-				me.element.stop().animate({top:'0'}, 200);
+				me.element.removeClass( 'header_slide' );
 			}
 		});
 		
@@ -96,7 +98,7 @@
 		this.element.contents().wrap( '<ul></ul>' );
 		
 		var list = this.element.find( 'ul' );
-		list.prepend('<li id="home_menu_link"><div><img src="'+img_url_1+'" alt="Home" width="30" height="30" /></div></li> ');
+		list.prepend('<li id="home_menu_link" class="menu_link"><div><img src="'+img_url_1+'" alt="Home" width="30" height="30" /></div></li> ');
 		$('#book-title').parent().wrap('<li id="book_title"><div><span></span></div></li>');
 		var buttons = $('<li id="options"><div></div></li>').appendTo(list);
 		buttons = buttons.find( 'div' );
@@ -123,7 +125,7 @@
 		this.search = searchElement.scalarsearch( { root_url: modules_uri+'/cantaloupe'} );
 		searchControl.find('img').click(function() {
 			if (parseInt($('.search_input').width()) == 0) {
-				$('.search_input').stop().animate({'width': '150%', 'borderColor': '#ddd'}, 250).focus();
+				$('.search_input').stop().delay( 100 ).animate({'width': '150%', 'borderColor': '#ddd'}, 250).focus();
 				if ( $( '#options' ).hasClass( 'wide' ) ) {
 					$( '#options' ).stop().animate( { 'width': ( 368 + 220 ) }, 250 ); // TODO: magic number
 				} else {
@@ -136,16 +138,16 @@
 		});
 		
 		
-		addIconBtn(buttons, 'visualization_icon.png', 'visualization_icon_hover.png', 'Visualizations');
+		addIconBtn(buttons, 'visualization_icon.png', 'visualization_icon_hover.png', 'Visualization');
 		//addIconBtn(buttons, 'api_icon.png', 'api_icon_hover.png', 'Data');
 		addIconBtn(buttons, 'help_icon.png', 'help_icon_hover.png', 'Help');
-		$('[title="Visualizations"]').click(function() {
+		$('[title="Visualization"]').click(function() {
 			if (state != ViewState.Navigating) {
 				setState(ViewState.Navigating);
 			} else {
 				setState(ViewState.Reading);
 			}
-		})
+		}).attr( 'id', 'visualization_btn' );
 		
 		var helpElement = $('<div></div>').appendTo('body');
 		this.help = helpElement.scalarhelp( { root_url: modules_uri+'/cantaloupe'} );
@@ -157,10 +159,13 @@
 		if ((scalarapi.model.user_level == "scalar:Author") || (scalarapi.model.user_level == "scalar:Commentator") || (scalarapi.model.user_level == "scalar:Reviewer")) {
 			$( '#options' ).addClass( 'wide' );
 			buttons.append('<img class="vrule" src="'+this.options.root_url+'/images/'+'gray1x1.gif"/>');
-			addIconBtn(buttons, 'new_icon.png', 'new_icon_hover.png', 'New', scalarapi.model.urlPrefix+'new.edit?'+template_getvar+'=honeydew');
+			addIconBtn(buttons, 'new_icon.png', 'new_icon_hover.png', 'New', scalarapi.model.urlPrefix+'new.edit');
 			
 			//addIconBtn(buttons, 'edit_icon.png', 'edit_icon_hover.png', 'Edit', scalarapi.basepath(window.location.href)+'.edit?'+template_getvar+'=honeydew');
-			addIconBtn(buttons, 'edit_icon.png', 'edit_icon_hover.png', 'Edit',  scalarapi.model.urlPrefix+scalarapi.basepath(window.location.href)+'.edit?'+template_getvar+'=honeydew');
+			addIconBtn(buttons, 'edit_icon.png', 'edit_icon_hover.png', 'Edit',  scalarapi.model.urlPrefix+scalarapi.basepath(window.location.href)+'.edit');
+			
+			buttons.append( '<div id="import_menu_link" class="menu_link"><img src="' + modules_uri + '/cantaloupe/images/' + 'import_icon.png" alt="Import" width="30" height="30"></div>' );
+			this.buildImportMenu();
 			
 			if (currentNode.hasScalarType('media')) {
 				addIconBtn(buttons, 'annotate_icon.png', 'annotate_icon_hover.png', 'Annotate', scalarapi.model.urlPrefix+scalarapi.basepath(window.location.href)+'.annotation_editor?'+template_getvar+'=honeydew');
@@ -209,6 +214,33 @@
 			me.buildMainMenu();
 		});
 		
+	}
+	
+	ScalarHeader.prototype.handleSetState = function( event, data ) {
+	
+		if ( !isMobile ) {
+			switch (data.state) {
+			
+				case ViewState.Reading:
+				if ( $(document).scrollTop() != 0 ) {
+					header.data('plugin_scalarheader').state = 'minimized';
+					$( '#header' ).addClass( 'header_slide' );
+				}
+				break;
+			
+				case ViewState.Navigating:
+				header.data('plugin_scalarheader').state = 'maximized';
+				$( '#header' ).removeClass( 'header_slide' );
+				break;
+			
+				case ViewState.Modal:
+				header.data('plugin_scalarheader').state = 'maximized';
+				$( '#header' ).removeClass( 'header_slide' );
+				break;
+			
+			}
+		}
+	
 	}
 	
 	/**
@@ -262,7 +294,7 @@
 	
 			// gather the main menu items
 			var i,
-				menu = $('<div id="main_menu" class="menu heading_font"><ol></ol></div>').appendTo('body');
+				menu = $('<div id="main_menu" class="menu heading_font"><ol></ol></div>').appendTo('#home_menu_link');
 			var menuList = menu.find('ol'),
 				menuItems = node.getRelatedNodes('referee', 'outgoing', true);
 			var n = menuItems.length;
@@ -300,39 +332,163 @@
 		// wait a bit before setting up rollovers to avoid accidental triggering of the menu
 		setTimeout(function() {
 		
-			$('#home_menu_link').mouseenter(function(e) {
-				$(this).css('backgroundColor', '#eee');
-				$('#main_menu').show();
-			});
-		
-			$('#home_menu_link').click(function(e) {
-				if ($('#main_menu').css('display') == "block") {
-					$(this).css('backgroundColor', '#fff');
-					$('#main_menu').hide();
-				} else {
+			/*$('#home_menu_link').mouseenter(function(e) {
+				if ( state != ViewState.Modal ) {
 					$(this).css('backgroundColor', '#eee');
 					$('#main_menu').show();
+				}
+			});*/
+				
+			$('#home_menu_link').hover( function() {
+				if ( state != ViewState.Modal ) {
+					$(this).css('backgroundColor', '#eee');
+					$( '#main_menu' ).css( 'visibility', 'visible' );
+				}
+			}, function() {
+				$( '#main_menu' ).css( 'visibility', 'hidden' );
+				$(this).css('backgroundColor', 'inherit');
+			} );
+		
+			$('#home_menu_link').click(function(e) {
+				if ($('#main_menu').css('visibility') == "visible") {
+					$(this).css('backgroundColor', '#fff');
+					$('#main_menu').css( 'visibility', 'hidden' );
+				} else {
+					if ( state != ViewState.Modal ) {
+						$(this).css('backgroundColor', '#eee');
+						console.log('show2');
+						$('#main_menu').css( 'visibility', 'visible' );
+					}
 				}
 				e.stopImmediatePropagation();
 			});
 			
-			$('#main_menu').mouseleave(function() {
+			/*$('#main_menu').mouseleave(function() {
 				$('#home_menu_link').css('backgroundColor', 'inherit');
 				$('#main_menu').hide();
-			})
-			
-			$('#book_title').mouseenter(function() {
-				$('#home_menu_link').css('backgroundColor', 'inherit');
-				$('#main_menu').hide();
-			})
+			})*/
 			
 			$('body').click(function() {
 				$('#home_menu_link').css('backgroundColor', 'inherit');
-				$('#main_menu').hide();
+				$('.menu').css( 'visibility', 'hidden' );
 			});
 		
 		}, 1000);
 		
+	}
+	
+	ScalarHeader.prototype.buildImportMenu = function() {
+	
+		// gather the main menu items
+		var listItem, secondaryMenu, secondaryMenuList, secondaryListItem,
+			menuLink = $( '#import_menu_link' ),
+			menu = $('<div id="import_menu" class="menu heading_font"><ul></ul></div>').appendTo( menuLink );
+			menuList = menu.find('ul');
+			
+		var handleListItemHover = function() {
+			if ( state != ViewState.Modal ) {
+				var i, n, menuData, menuDatum, submenu, secondaryListItem;
+				
+				$( '.submenu' ).css( 'visibility', 'hidden' );
+				submenu = $( this ).data( 'submenu' );
+				if ( submenu == null ) {
+					var secondaryMenu = $( '<div class="menu heading_font submenu"><ul></ul></div>' ).appendTo( $( '#import_menu_link ') ),
+						secondaryMenuList = secondaryMenu.find( 'ul' );
+					menuData = $( this ).data( 'submenuData' );
+					n = menuData.length;
+					for ( i = 0; i < n; i++ ) {
+						menuDatum = menuData[ i ];
+						secondaryListItem = $( '<li>' + menuDatum.title + '</li> ').appendTo( secondaryMenuList );
+						secondaryListItem.data( 'url', menuDatum.url );
+						secondaryListItem.click( function() {
+							$( '.submenu' ).css( 'visibility', 'hidden' );
+							window.location = $( this ).data( 'url' );
+						} );
+					}
+					$( this ).data( 'submenu', secondaryMenu );
+					secondaryMenu.css( {
+						'visibility': 'visible',
+						'top': $( this ).offset().top,
+						'left': $( this ).offset().left - secondaryMenu.width()
+					} );
+				} else {
+					submenu.css( 'visibility', 'visible' );
+				}
+			}
+		} 
+		
+		listItem = $( '<li>Affiliated archives</li>' ).appendTo( menuList );
+		listItem.data( 'submenuData', [
+			{ title: 'Critical Commons', url: scalarapi.model.urlPrefix + 'import/critical_commons' },
+			{ title: 'Cuban Theater Digital Archive', url: scalarapi.model.urlPrefix + 'import/cuban_theater_digital_archive' },
+			{ title: 'Hemispheric Institute Digital Video Library', url: scalarapi.model.urlPrefix + 'import/hemispheric_institute' },
+			{ title: 'Hypercities', url: scalarapi.model.urlPrefix + 'import/hypercities' },
+			{ title: 'Internet Archive', url: scalarapi.model.urlPrefix + 'import/internet_archive' },
+			{ title: 'Hypercities', url: scalarapi.model.urlPrefix + 'import/hypercities' },
+			{ title: 'Play!', url: scalarapi.model.urlPrefix + 'import/play' },
+			{ title: 'Shoah Foundation VHA Online', url: scalarapi.model.urlPrefix + 'import/shoah_foundation_vha_online' },
+			{ title: 'Shoah Foundation VHA (partner site)', url: scalarapi.model.urlPrefix + 'import/shoah_foundation_vha' }
+		] );
+		listItem.hover( handleListItemHover );
+		
+		listItem = $( '<li>Other archives</li>' ).appendTo( menuList );
+		listItem.data( 'submenuData', [
+			{ title: 'Prezi', url: scalarapi.model.urlPrefix + 'import/prezi' },
+			{ title: 'SoundCloud', url: scalarapi.model.urlPrefix + 'import/soundcloud' },
+			{ title: 'Vimeo', url: scalarapi.model.urlPrefix + 'import/vimeo' },
+			{ title: 'YouTube', url: scalarapi.model.urlPrefix + 'import/youtube' }
+		] );
+		listItem.hover( handleListItemHover );
+		
+		listItem = $( '<li>Local media files</li>' ).appendTo( menuList );
+		listItem.click( function() {
+			$( '.submenu' ).css( 'visibility', 'hidden' );
+			window.location = scalarapi.model.urlPrefix + 'upload';
+		} );
+		listItem.hover( function() { $( '.submenu' ).css( 'visibility', 'hidden' ); } )
+		
+		listItem = $( '<li>Internet media files</li>' ).appendTo( menuList );
+		listItem.click( function() {
+			$( '.submenu' ).css( 'visibility', 'hidden' );
+			window.location = scalarapi.model.urlPrefix + 'new.edit#type=media';
+		} );
+		listItem.hover( function() { $( '.submenu' ).css( 'visibility', 'hidden' ); } )
+		
+		listItem = $( '<li>Other Scalar books</li>' ).appendTo( menuList );
+		listItem.click( function() {
+			$( '.submenu' ).css( 'visibility', 'hidden' );
+			window.location = scalarapi.model.urlPrefix + 'import/system';
+		} );
+		listItem.hover( function() { $( '.submenu' ).css( 'visibility', 'hidden' ); } )
+		
+		menuLink.hover( function() {
+			if ( state != ViewState.Modal ) {
+				$(this).css('backgroundColor', '#eee');
+				$( '#import_menu' ).css( {
+					'visibility': 'visible',
+					'left': $( this ).offset().left - $( '#import_menu' ).width() + menuLink.width() + ( parseInt( menuLink.css( 'padding-left' ) ) * 2 )
+				} );
+			}
+		}, function() {
+			$( '#import_menu' ).css( 'visibility', 'hidden' );
+			$( '.submenu' ).css( 'visibility', 'hidden' );
+			$(this).css('backgroundColor', 'inherit');
+		} );
+	
+		menuLink.click(function(e) {
+			if ($('#import_menu').css('visibility') == "visible") {
+				$(this).css('backgroundColor', '#fff');
+				$('#import_menu').css( 'visibility', 'hidden' );
+			} else {
+				if ( state != ViewState.Modal ) {
+					$(this).css('backgroundColor', '#eee');
+					console.log('show2');
+					$('#import_menu').css( 'visibility', 'visible' );
+				}
+			}
+			e.stopImmediatePropagation();
+		});
+
 	}
 	
 	/*ScalarHeader.prototype.buildAdminMenu = function() {

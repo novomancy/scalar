@@ -8,7 +8,7 @@
  * (the "License"); you may not use this file except in compliance 
  * with the License. You may obtain a copy of the License at
  * 
- * http://www.osedu.org/licenses /ECL-2.0 
+ * http://www.osedu.org/licenses/ECL-2.0 
  * 
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an "AS IS"
@@ -27,7 +27,8 @@
 		var media = {
 		
 			options: $.extend({
-				'shy':true
+				'shy':true,
+				'details': null
 			}, options),
 			
 			showAnnotation: function(e, relation, m, forceShow) {
@@ -144,7 +145,7 @@
 			
 			var description = node.current.description;
 			if ( description == null ) {
-				description = '<i>No description available.</i>';
+				description = '<p><i>No description available.</i></p>';
 			}
 			var descriptionPane = $('<div class="media_description pane">'+description+'</div>').appendTo(element);
 			var descriptionTab = $('<div class="media_tab select">Description</div>').appendTo(mediaTabs);
@@ -218,8 +219,7 @@
 			table.append('<tr><td>Source file</td><td><a href="'+node.current.sourceFile+'">'+node.current.sourceFile+'</a></td></tr>');
 			
 			// API links
-			table.append('<tr><td>RDF</td><td><a href="'+node.url+'.rdf">'+node.url+'.rdf</a></td></tr>');
-			table.append('<tr><td>JSON</td><td><a href="'+node.url+'.json">'+node.url+'.json</a></td></tr>');
+			table.append('<tr><td>Raw</td><td><a href="'+node.url+'.rdf">RDF</a>, <a href="'+node.url+'.json">JSON</a></td></tr>');
 
 			// auxiliary properties
 			for ( prop in node.current.auxProperties ) {
@@ -232,6 +232,65 @@
 				foundAuxContent = true;
 			}
 			
+			var detailsTab = $( '<div class="media_tab">Details</div>' ).appendTo( mediaTabs );
+			detailsTab.click( function() {
+				media.options[ 'details' ].show( node );
+			} );
+			
+			/*
+			var appearancesTab = $('<div class="media_tab">Appearances</div>').appendTo(mediaTabs);
+			var appearancesPane = $('<div class="media_metadata pane"></div>').appendTo(element);
+			appearancesTab.click(function() {
+				$(this).parent().parent().find('.pane').hide();
+				media.minimizeAnnotationPane();
+				appearancesPane.show();
+				$(this).parent().find('.media_tab').removeClass('select');
+				appearancesTab.addClass('select');
+				if (currentRelation != null) {
+					media.showAnnotation(null, currentRelation, mediaelement, true);
+				}
+			});
+			
+			var citations = $('<div class="citations"></div>').appendTo(appearancesPane);
+			var citations, relation, relations;
+
+			// show media references with excerpts
+			relations = node.getRelations('referee', 'incoming'); 
+			for (i in relations) {
+			
+				relation = relations[i];
+				var temp = $('<div>'+relation.body.current.content+'</div>').appendTo(overlay);
+				wrapOrphanParagraphs(temp);
+				temp.find('a[rel="'+mediaelement.model.node.current.urn+'"]').attr('href', mediaelement.model.node.url);
+				temp.find('a').not('[rel="'+mediaelement.model.node.current.urn+'"]').each(function() {
+					$(this).replaceWith($(this).html());
+				});
+				citingContent = temp.find('a[rel="'+mediaelement.model.node.current.urn+'"]').parent().html();
+				citations.append('<blockquote>&ldquo;'+citingContent+'&rdquo;</blockquote><p class="attribution">&mdash;from <a href="'+relation.body.url+'">&ldquo;'+relation.body.getDisplayTitle()+'&rdquo;</a></p>');
+				temp.remove();
+			}
+			
+			// show containing paths
+			relations = mediaelement.model.node.getRelations('path', 'incoming', 'index');
+			for (i in relations) {
+				relation = relations[i];
+				citations.append('<p>As Step '+relation.index+' of the <a href="'+relation.body.url+'">&ldquo;'+relation.body.getDisplayTitle()+'&rdquo;</a> path</p>');
+			}
+			
+			// show tags
+			relations = mediaelement.model.node.getRelations('tag', 'incoming');
+			for (i in relations) {
+				relation = relations[i];
+				citations.append('<p>Tagged by <a href="'+relation.body.url+'">&ldquo;'+relation.body.getDisplayTitle()+'&rdquo;</a></p>');
+			}
+			
+			if (citations.children().length == 1) {
+				appearancesTab.remove();
+				appearancesPane.remove();
+			}
+			*/
+			
+			
 			if (media.options.shy) {
 				mediaelement.model.element.mouseenter(function() {
 					var timeout = $(this).data('timeout');
@@ -241,12 +300,14 @@
 					mediaTabs.slideDown();
 				})
 				mediaelement.model.element.mouseleave(function() {
-					var timeout = $(this).data('timeout');
-					if (timeout != null) {
-						clearTimeout(timeout);
+					if ( window.innerWidth > 480 ) {
+						var timeout = $(this).data('timeout');
+						if (timeout != null) {
+							clearTimeout(timeout);
+						}
+						var timeout = setTimeout(function() { mediaTabs.slideUp(); }, 1000)
+						$(this).data('timeout', timeout);
 					}
-					var timeout = setTimeout(function() { mediaTabs.slideUp(); }, 1000)
-					$(this).data('timeout', timeout);
 				})
 			} else {
 				mediaTabs.show();
