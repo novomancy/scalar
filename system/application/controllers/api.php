@@ -62,6 +62,7 @@ Class Api extends Controller {
 
 		header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
 		header("Expires: Sat, 26 Jul 1997 05:00:00 GMT"); // Date in the past
+		header("Access-Control-Allow-Origin: *");
 		
 		//Since this isn't using the MY_Controller parent (too much unneeded overhead), load infrastructure
 		$this->load->helper(array('url', 'string', 'language', 'array', 'directory'));
@@ -284,9 +285,9 @@ Class Api extends Controller {
 		//verify format
 		if(!$this->data['format'] || !array_key_exists($this->data['format'],$this->allowable_formats)) $this->data['format'] = $this->default_return_format;
 		else $this->data['format'] = $this->allowable_formats[$this->data['format']]; 
-		
-		if(!$this->data['native'] && (!$this->data['email'] || !$this->data['api_key'] || !$this->data['action'])) return false;
-		if(!in_array($this->data['action'], $this->actions)) return false;
+
+		if(!$this->data['native'] && (!$this->data['email'] || !$this->data['api_key'] || !$this->data['action'])) return false;		
+		if(!in_array($this->data['action'], $this->actions)) return false;		
 		return true;
 	}
 	

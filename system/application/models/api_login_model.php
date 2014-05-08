@@ -36,8 +36,7 @@ class Api_login_model extends User_model {
 	public function do_login($id, $api, $host) {
 		// Run user login
 		$email = trim($id);
-		$temp = trim($api);
-		$api_key = sha1(trim($api));		//TODO: This should really use crypt() for security, but unsure of install environment
+		$api_key = trim($api);		//IMPORTANT: This update breaks old uses of the API Keys!
 
 		if(!$result = $this->get_by_email_and_api($email, $api_key)) return false;
 		
